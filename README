@@ -43,6 +43,11 @@ Both of these additions can of course be combined via
 
 make USE_BLAS=1 USE_PNG=1
 
+NB: If you do use OpenBLAS and the performance seems really bad while
+simultaneously all your CPU cores seem to be hard at work, try running the
+executable via "OMP_NUM_THREADS=1 ./executable" instead of just "./executable"
+- that seems to fix a "bug" in newer OpenBLAS versions.
+
 
 On other Unix systems, just install your favorite C++11 compliant compiler and
 potentially make (not necessary, just a convenience). On Windows 10, 11 and
