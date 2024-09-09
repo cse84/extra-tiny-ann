@@ -1,3 +1,5 @@
+.PHONY: extra_tiny_cross_entropy extra_tiny_cifar100 extra_tiny_go
+
 all: extra_tiny_cross_entropy extra_tiny_cifar100 extra_tiny_go
 
 extra_tiny_cross_entropy: extra_tiny_cross_entropy.cpp
