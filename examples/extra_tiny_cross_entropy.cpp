@@ -1,3 +1,8 @@
+// Copyright 2024 Daniel Müller
+//
+// Licensed under the terms given in the file named "LICENSE"
+// in the root folder of the project
+
 #include "../extra_tiny_ann.hpp"
 
 #define NR_CIFAR100_CLASSES 100

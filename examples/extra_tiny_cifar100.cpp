@@ -1,3 +1,8 @@
+// Copyright 2024 Daniel Müller
+//
+// Licensed under the terms given in the file named "LICENSE"
+// in the root folder of the project
+
 #include <fstream>
 #include <sstream>
 #include <thread>
@@ -5,6 +10,18 @@
 #ifdef USE_PNG
 #include "png_simplified.hpp"
 #endif
+
+//potential tasks to solve:
+//- train larger network
+//- make the number of channels and number of neural network layers easily changeable
+//- make a nice graph as output during training to visualize progress (e.g. using gnuplot)
+//- change inference so that it works on multiple images simultaneously using batch_size > 1
+//- regularly write the current state (parameters, iteration, ADAM's moment estimates, RNG state) to disk
+//   during optimization so that you can restart from there if training is interrupted
+//- implement multithreaded version of test()
+//- more data augmentation methods (horizontal reflection, mixup, small translation, adding patches of noise)
+//- export network description and parameters into a standard format (e.g. ONNX, ConvNetJS)
+//- knowledge distillation from a large network to a small network
 
 #define NR_CIFAR100_CLASSES 100
 #define NR_CIFAR100_TRAIN_IMAGES 50000
@@ -616,16 +633,5 @@ int main() {
 //}
 
 #endif
-
-//potential tasks to solve:
-//- train larger network
-//- make the number of channels and number of neural network layers easily changeable
-//- make a nice graph as output during training to visualize progress (e.g. using gnuplot)
-//- change inference so that it works on multiple images simultaneously using batch_size > 1
-//- regularly write the current state (parameters, iteration, ADAM's moment estimates, RNG state) to disk during optimization so that you can restart from there if training is interrupted
-//- implement multithreaded version of test()
-//- more data augmentation methods (horizontal reflection, mixup, small translation, adding patches of noise)
-//- export network description and parameters into a standard format (e.g. ONNX, ConvNetJS)
-//- knowledge distillation from a large network to a small network
 
 // vim: ts=8 : autoindent : textwidth=0 : foldmethod=marker

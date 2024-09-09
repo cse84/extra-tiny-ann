@@ -85,6 +85,11 @@ nitty-gritty, but are scared of the complexity or don't know where to start
 learning or are swamped in oodles of learning material that is superficial,
 incorrect, outdated, incomplete or unfocused.
 
+I read through the examples, I still don't understand anything
+==============================================================
+
+Read through intro_lesson.html
+
 Ok, I'm done. What next?
 ========================
 
@@ -103,4 +108,4 @@ Frequently asked questions
    need. With languages not compiled to machine code, "no dependencies" is
    essentially not possible.
 - Do people really ask these questions frequently? No, but I can see into the
-   future and thus already know what people will ask in the future.
+   future and thus already know what people will ask.

@@ -1,3 +1,8 @@
+// Copyright 2024 Daniel Müller
+//
+// Licensed under the terms given in the file named "LICENSE"
+// in the root folder of the project
+
 #include <iostream>
 #include <cstdint>
 #include <cstdarg>
