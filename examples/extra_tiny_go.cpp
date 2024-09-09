@@ -27,7 +27,7 @@ typedef std::shared_ptr<std::vector<struct go_t>> GO_Buffer;
 
 GO_Buffer load_go_data( bool test_set ) { // {{{
 	uint_fast32_t nr_images = test_set?NR_GO_TEST_IMAGES:NR_GO_TRAIN_IMAGES;
-	std::string filename = test_set?"newtrainingdata.test":"newtrainingdata";
+	std::string filename = test_set?"extra-tiny-go-dataset.test":"extra-tiny-go-dataset.train";
 	GO_Buffer go_images = GO_Buffer( new std::vector<struct go_t>( nr_images ) );
 	std::ifstream go_file = std::ifstream( filename , std::ifstream::in | std::ifstream::binary );
 	if( go_file.bad() ) {
