@@ -15,6 +15,8 @@
  *
  */
 
+#include <png.h>
+
 #pragma pack(push, 1)
 struct png_image_t {
 	int32_t width, height;

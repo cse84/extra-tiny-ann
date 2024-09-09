@@ -1,4 +1,4 @@
-#include "../tiny_tiny_cnn.hpp"
+#include "../extra_tiny_ann.hpp"
 
 #define NR_CIFAR100_CLASSES 100
 
