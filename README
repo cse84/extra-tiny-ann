@@ -1,0 +1,106 @@
+Extra Tiny ANN library
+======================
+
+What is this? It's a minimalistic, but feature-complete library for training
+artificial neural networks (ANNs) using standard C++11 without any dependencies
+beyond the standard template library. The point is to be able to get started in
+artificial intelligence quickly, without needing dozens of libraries, gigabytes
+of data and a graphics card. It is meant as a teaching tool, hiding none of the
+interiors and getting you quickly from
+"i don't have a clue what artificial intelligence is" to
+"i have trained my own ANN and it works". It is not meant as a tool for serious
+development of larger projects, use Tensorflow, Torch, etc. for that.
+
+How to get started
+==================
+
+If on a Debian-derived Linux (e.g. Ubuntu):
+
+sudo apt-get install make g++
+git clone https://github.com/cse84/extra-tiny-ann
+cd extra-tiny-ann
+make
+
+This should compile all examples. Then do the following to start one of the
+examples:
+
+cd examples
+./extra_tiny_cifar100
+
+The examples can be accelerated a bit by compiling against OpenBLAS, but will
+work fine without. If you want to use OpenBLAS, do the following:
+
+sudo apt-get install libopenblas-dev
+make USE_BLAS=1
+
+One of the examples, extra_tiny_cifar100.cpp, needs PNG image support for one
+of its functions, so you might want to do the following:
+
+sudo apt-get install libpng-dev
+make USE_PNG=1
+
+Both of these additions can of course be combined via
+
+make USE_BLAS=1 USE_PNG=1
+
+
+On other Unix systems, just install your favorite C++11 compliant compiler and
+potentially make (not necessary, just a convenience). On Windows 10, 11 and
+beyond, you can use the Windows Subsystem for Linux to install Ubuntu or you
+can use Visual Studio (but then you can probably not use the Makefiles and have
+to compile manually).
+
+What do the examples do?
+========================
+
+extra_tiny_cross_entropy.cpp is just a very simple example of numerical
+optimization without involving an actual neural net, to illustrate the basic
+principle.
+
+extra_tiny_cifar100.cpp trains a neural net on CIFAR100 data for image
+classification. Depending on your CPU, complete training might take over a day,
+that's why parameters for an already trained net are included and can be used
+to test inference (i.e. applying the neural net to actual data), provided you
+have libpng-dev installed. The training data must be obtained separately from
+https://www.cs.toronto.edu/~kriz/cifar.html (download
+https://www.cs.toronto.edu/~kriz/cifar-100-binary.tar.gz and decompress using
+"tar -xzf cifar-100-binary.tar.gz").
+
+extra_tiny_go.cpp trains a neural net for playing Go (a.k.a. Baduk or Wéiqí).
+Parameters for an already trained are included, so you can just play against
+the AI. If you have some experience playing the game, you will defeat the AI
+easily, but it will challenge players who have just started playing the game.
+The training data must be obtained separately from
+https://github.com/cse84/extra-tiny-go-dataset
+
+What am I supposed to do with this?
+===================================
+
+Unless you want to learn about artificial intelligence, particularly ANNs, and
+want to get practical, this library is probably useless to you. I wrote it for
+my past self, who would have loved to have this, but had to learn all the
+lessons the hard way. The imagined audience for this library is people who want
+to get started in artificial intelligence, want to get down to the
+nitty-gritty, but are scared of the complexity or don't know where to start
+learning or are swamped in oodles of learning material that is superficial,
+incorrect, outdated, incomplete or unfocused.
+
+Ok, I'm done. What next?
+========================
+
+If you want to learn more, https://arxiv.org/list/cs.AI/recent is a very good
+starting place, also https://deeplearn.org or https://arxiv-sanity-lite.com/
+for a more filtered view. Also https://huggingface.co/ and https://civitai.com
+and https://www.youtube.com/@TwoMinutePapers/videos and https://www.ostagram.me
+and https://github.com/jcjohnson/neural-style and of course reddit.
+
+Frequently asked questions
+==========================
+
+- Why "extra tiny"? Because I might make a similar library that is just "tiny",
+   not "extra tiny", and I wanted to avoid a name collision.
+- Why C++11? Because it is easy and fast and standardized and does everything I
+   need. With languages not compiled to machine code, "no dependencies" is
+   essentially not possible.
+- Do people really ask these questions frequently? No, but I can see into the
+   future and thus already know what people will ask in the future.
