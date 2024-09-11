@@ -8,6 +8,11 @@
 #include <thread>
 #include "../extra_tiny_ann.hpp"
 
+//NB: to be able to run this, you need to download the training data from
+//https://github.com/cse84/extra-tiny-go-dataset (download
+//extra-tiny-go-dataset.tar.gz to this directory
+//and execute "tar -xzf extra-tiny-go-dataset.tar.gz").
+
 //TODO: when this was lower, training loss exploded, which implies problems in the training data (which would be unsurprising
 //       if training data were to be sampled from unitialized memory). but my code is written such that a lower number here should
 //       just lead to data being sampled from a smaller subset, which is not a problem (apart from the risk of overfitting),

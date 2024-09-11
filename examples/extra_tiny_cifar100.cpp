@@ -11,6 +11,11 @@
 #include "png_simplified.hpp"
 #endif
 
+//NB: to be able to run this, you need to download the training data from
+//https://www.cs.toronto.edu/~kriz/cifar.html (download
+//https://www.cs.toronto.edu/~kriz/cifar-100-binary.tar.gz to this directory
+//and execute "tar -xzf cifar-100-binary.tar.gz").
+//
 //potential tasks to solve:
 //- train larger network
 //- make the number of channels and number of neural network layers easily changeable
