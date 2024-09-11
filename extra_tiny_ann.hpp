@@ -654,6 +654,28 @@ void cross_entropy_backward( Buffer output , Buffer target , Buffer gradient , u
 	}
 }
 
+void l2_forward( Buffer output , Buffer target , Buffer objective , uint32_t channels , uint32_t batch_size , uint32_t height , uint32_t width ) { // {{{
+	uint_fast32_t i,j,k,m,n;
+	m = batch_size * height * width;
+	n = height * width;
+	zero_data(objective);
+	for( j = 0 ; j < channels ; j++ ) {
+		for( i = 0 ; i < batch_size ; i++ ) {
+			for( k = 0 ; k < n ; k++ ) {
+				(*objective)[i] += 0.5 * pow( ((*output)[i*n+j*m+k]) - ((*target)[i*n+j*m+k]) , 2.0 );
+			}
+		}
+	}
+} // }}}
+
+void l2_backward( Buffer output , Buffer target , Buffer gradient , uint32_t channels , uint32_t batch_size , uint32_t height , uint32_t width ) {
+	uint_fast32_t j,m;
+	m = channels * batch_size * height * width;
+	for( j = 0 ; j < m ; j++ ) {
+		(*gradient)[j] = (*target)[j] - (*output)[j];
+	}
+}
+
 // Adam, aka adaptive moment estimation from "Adam: A Method for Stochastic Optimization" by Kingma & Ba
 void adam( Buffers& layer_parameter_gradients , Buffers& layer_parameter_updates , Buffers& layer_1st_moment_estimates , Buffers& layer_2nd_moment_estimates , uint32_t iteration , float learning_rate = 0.001 , float linear_momentum_coefficient = 0.9 , float square_momentum_coefficient = 0.999 , float epsilon = 1e-8 ) { // {{{
 	uint32_t i,j,m,n;

@@ -1,6 +1,6 @@
-.PHONY: extra_tiny_cross_entropy extra_tiny_cifar100 extra_tiny_go
+.PHONY: extra_tiny_cross_entropy extra_tiny_cifar100 extra_tiny_go extra_tiny_xor
 
-all: extra_tiny_cross_entropy extra_tiny_cifar100 extra_tiny_go
+all: extra_tiny_cross_entropy extra_tiny_cifar100 extra_tiny_go extra_tiny_xor
 
 extra_tiny_cross_entropy: extra_tiny_cross_entropy.cpp
 	g++ -Wall -g -rdynamic -std=c++11 -o extra_tiny_cross_entropy extra_tiny_cross_entropy.cpp
@@ -26,3 +26,6 @@ ifdef USE_BLAS
 else
 	g++ -Wall -g -rdynamic -std=c++11 -o extra_tiny_go extra_tiny_go.cpp -lpthread
 endif
+
+extra_tiny_xor: extra_tiny_xor.cpp
+	g++ -Wall -g -rdynamic -std=c++11 -o extra_tiny_xor extra_tiny_xor.cpp
