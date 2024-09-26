@@ -62,6 +62,10 @@ extra_tiny_cross_entropy.cpp is just a very simple example of numerical
 optimization without involving an actual neural net, to illustrate the basic
 principle.
 
+extra_tiny_xor.cpp is another very simple example showing how to train a tiny
+neural network solving just about the simplest problem for which a neural
+network might be useful.
+
 extra_tiny_cifar100.cpp trains a neural net on CIFAR100 data for image
 classification. Depending on your CPU, complete training might take over a day,
 that's why parameters for an already trained net are included and can be used
@@ -72,11 +76,17 @@ https://www.cs.toronto.edu/~kriz/cifar-100-binary.tar.gz and decompress using
 "tar -xzf cifar-100-binary.tar.gz").
 
 extra_tiny_go.cpp trains a neural net for playing Go (a.k.a. Baduk or Wéiqí).
-Parameters for an already trained are included, so you can just play against
-the AI. If you have some experience playing the game, you will defeat the AI
-easily, but it will challenge players who have just started playing the game.
-The training data must be obtained separately from
+Parameters for an already trained net are included, so you can just play
+against the AI. If you have some experience playing the game, you will defeat
+the AI easily, but it will challenge players who have just started playing the
+game. The training data must be obtained separately from
 https://github.com/cse84/extra-tiny-go-dataset
+
+extra_tiny_super_resolution.cpp trains a neural net on a collection of PNG
+images. The trained net can produce an output image that is twice as large as
+the input image but should look better than an output image produced with a
+primitive upscaling algorithm. Parameters for an already trained net are
+included.
 
 What am I supposed to do with this?
 ===================================

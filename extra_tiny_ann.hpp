@@ -19,6 +19,8 @@
 #include <memory>
 #include <random>
 #include <chrono>
+#include <dirent.h>
+#include <unistd.h>
 
 #ifdef USE_BLAS
 #include "/usr/include/x86_64-linux-gnu/cblas.h"
@@ -627,6 +629,140 @@ std::tuple<uint32_t,uint32_t,uint32_t,uint32_t> buffer_sizes_global_max_pooling(
 	return (std::tuple<uint32_t,uint32_t,uint32_t,uint32_t>(input_channels*batch_size,input_channels*batch_size*height*width,0,batch_size*input_channels));
 }
 
+//i know this is confusing, it also caused me headaches. a different name for this function could be "transpose", because it is inspired by matrix transposition.
+//a matrix has only 2 dimensions, height & width. this function assumes a 5-dimensional input array, with dimensions 1,3 & 5 not taking part in the transposition
+//and remaining unchanged. dimensions 2 & 4 play the role of height & width of the matrix. dimensions 1 & 5 don't really change that much relative to simple
+//transposition, dimension 5 just means applying transposition to a matrix with vectors in place of normal cells/elements. dimension 1 just means applying
+//transposition to multiple matrices that are stored one after another. but the interpretation of dimension 3 is not obvious.
+void shuffle( const Buffer input_data , Buffer output_data , uint32_t outer , uint32_t cols , uint32_t mids , uint32_t rows , uint32_t element_size ) { // {{{
+	uint32_t i/*,j*/,m,a,b,row,col,mid;
+	m = cols * rows * mids;
+	a = mids * cols;
+	b = mids * rows;
+	//float output_array[outer][cols][mids][rows][element_size] = output_data->data();
+	//float input_array[outer][rows][mids][cols][element_size] = input_data->data();
+	//std::cerr << "shuffle " << outer << " " << cols << " " << mids << " " << rows << " " << element_size << std::endl;
+	for( i = 0 ; i < outer ; i++ ) {
+		for( col = 0 ; col < cols ; col++ ) {
+			for( mid = 0 ; mid < mids ; mid++ ) {
+				if( 1 == element_size ) {
+					for( row = 0 ; row < rows ; row++ ) {
+						//std::cerr << "shuffle2 " << i << " " << col << " " << mid << " " << row << " " << ( i * m + col * b + mid * rows + row ) << " " << ( i * m + row * a + mid * cols + col ) << std::endl;
+						(*output_data)[ i * m + col * b + mid * rows + row ] = (*input_data)[ i * m + row * a + mid * cols + col ];
+					}
+				} else {
+					for( row = 0 ; row < rows ; row++ ) {
+						//memcpy(	&(output_array[i][col][mid][row][0]) ,
+						//	 &(input_array[i][row][mid][col][0]) , element_size * sizeof( float ) );
+						//std::cerr << "shuffle2 " << i << " " << col << " " << mid << " " << row << " " << ( i * m + col * b + mid * rows + row ) << " " << ( i * m + row * a + mid * cols + col ) << std::endl;
+						memcpy(	output_data->data() + ( i * m + col * b + mid * rows + row ) * element_size ,
+							input_data->data() + ( i * m + row * a + mid * cols + col ) * element_size , element_size * sizeof( float ) );
+					}
+				}
+			}
+		}
+	}
+} // }}}
+
+void forward_reshape( const Buffer input , Buffer output , uint32_t input_channels , uint32_t output_channels , uint32_t batch_size , uint32_t input_height , uint32_t output_height , uint32_t input_width , uint32_t output_width ) { // {{{
+	if( input_channels * input_height * input_width != output_channels * output_height * output_width ) {
+		throw std::length_error( std::string( CURRENT_FUNCTION_NAME ) + ": total volume must not change" );
+	}
+	//if( input_width == output_width ) {
+	//	if( output_channels < input_channels ) { //upsample rows (reduce channels,increase rows)
+	//		if( 0 != input_channels % output_channels ) {
+	//			throw std::length_error( std::string( CURRENT_FUNCTION_NAME ) + ": input_channels must be divisible by output_channels" );
+	//		}
+	//		std::cerr << "imma upsample " << (input_channels / output_channels) << std::endl;
+	//		shuffle( input , output , output_channels , input_height * batch_size , 1 , input_channels / output_channels , input_width ); // seems to be correct
+	//		//shuffle( input , output , output_channels , input_channels / output_channels , batch_size , input_height , input_width );
+	//		//shuffle( input , output , output_channels , output_channels * input_height , batch_size , input_channels / output_channels , input_width );
+	//				//this->rows = output_height / input_height;
+	//				//this->columns = output_channels * input_height;
+	//		//shuffle( input , output , input_height , 1 , input_channels , input_width );
+	//	} else { //downsample rows (reduce rows,increase channels)
+	//		if( 0 != output_channels % input_channels ) {
+	//			throw std::length_error( std::string( CURRENT_FUNCTION_NAME ) + ": input_channels must be divisible by output_channels" );
+	//		}
+	//		std::cerr << "imma downsample " << (output_channels / input_channels) << std::endl;
+	//		shuffle( input , output , input_channels , output_channels / input_channels , 1 , output_height * batch_size , output_width ); // seems to be correct
+	//		//shuffle( input , output , input_channels * batch_size , output_channels / input_channels , 1 , output_height , output_width );
+	//		//shuffle( input , output , input_channels , output_channels / input_channels , batch_size , output_height , output_width );
+	//		//shuffle( input , output , input_channels , output_height , batch_size , output_channels / input_channels , output_width );
+	//				//this->rows = input_channels * output_height;
+	//				//this->columns = input_height / output_height;
+	//	}
+	//} else if( input_height == output_height ) {
+	//	if( output_channels < input_channels ) {
+	//		//shuffle();
+	//		////shuffle( input , output , input_height , 1 , input_channels , input_width );
+	//	} else {
+	//		//shuffle();
+	//	}
+	//} else if( input_channels == output_channels ) {
+	//	if( output_height < input_height ) { //upsample columns
+	//		if( 0 != output_width % input_width ) {
+	//			throw std::length_error( std::string( CURRENT_FUNCTION_NAME ) + ": output_width must be divisible by input_width" );
+	//		}
+	//		shuffle( input , output , output_channels * batch_size * output_height , input_width , 1 , output_width / input_width , 1 );
+	//		//shuffle( input , output , cols , 1 , rows , 1 );
+	//		////shuffle( input , output , input_height , 1 , input_channels , input_width );
+	//	} else { //downsample columns
+	//		if( 0 != input_width % output_width ) {
+	//			throw std::length_error( std::string( CURRENT_FUNCTION_NAME ) + ": input_width must be divisible by output_width" );
+	//		}
+	//		shuffle( input , output , input_channels * batch_size * input_height , input_width / output_width , 1 , output_width , 1 );
+	//		//shuffle();
+	//	}
+	//} else {
+	//	throw std::domain_error( std::string( CURRENT_FUNCTION_NAME ) + ": please change only 2 of channels, height, width at a time" );
+	//}
+	uint32_t a,b,c,d,e,dividend,divisor;
+	std::string dividend_name,divisor_name;
+	if( input_width == output_width ) {
+		if( output_channels < input_channels ) { //upsample rows (reduce channels,increase rows)
+			dividend = input_channels; divisor = output_channels; dividend_name = "input_channels"; divisor_name = "output_channels";
+			a = output_channels; b = input_height * batch_size; c = 1; d = input_channels / output_channels; e = input_width;
+		} else { //downsample rows (reduce rows,increase channels)
+			dividend = output_channels; divisor = input_channels; dividend_name = "output_channels"; divisor_name = "input_channels";
+			a = input_channels; b = output_channels / input_channels; c = 1; d = output_height * batch_size; e = output_width;
+		}
+	} else if( input_height == output_height ) {
+		if( output_channels < input_channels ) {//upsample columns (reduce channels,increase columns)
+			dividend = input_channels; divisor = output_channels; dividend_name = "input_channels"; divisor_name = "output_channels";
+			a = output_channels; b = input_height * input_width * batch_size; c = 1; d = input_channels / output_channels; e = 1;
+			//shuffle();
+			////shuffle( input , output , input_height , 1 , input_channels , input_width );
+		} else {//upsample columns (reduce columns,increase channels)
+			dividend = output_channels; divisor = input_channels; dividend_name = "output_channels"; divisor_name = "input_channels";
+			a = input_channels; b = output_channels / input_channels; c = 1; d = output_height * output_width * batch_size; e = 1;
+			//shuffle();
+		}
+	} else if( input_channels == output_channels ) {
+		if( input_width < output_width ) { //upsample columns (reduce rows,increase columns)
+			dividend = output_width; divisor = input_width; dividend_name = "output_width"; divisor_name = "input_width";
+			a = output_channels * batch_size * output_height; b = input_width; c = 1; d = output_width / input_width; e = 1;
+		} else { //downsample columns (reduce columns,increase rows)
+			dividend = input_width; divisor = output_width; dividend_name = "input_width"; divisor_name = "output_width";
+			a = input_channels * batch_size * input_height; b = input_width / output_width; c = 1; d = output_width; e = 1;
+		}
+	} else {
+		throw std::domain_error( std::string( CURRENT_FUNCTION_NAME ) + ": please change only 2 of channels, height, width at a time" );
+	}
+	if( 0 != dividend % divisor ) {
+		throw std::length_error( std::string( CURRENT_FUNCTION_NAME ) + ": " + dividend_name + " must be divisible by " + divisor_name );
+	}
+	shuffle( input , output , a , b , c , d , e );
+} // }}}
+
+void backward_reshape( const Buffer output , Buffer output_gradient , Buffer input_gradient , const Buffer parameters , uint32_t input_channels , uint32_t output_channels , uint32_t batch_size , uint32_t input_height , uint32_t output_height , uint32_t input_width , uint32_t output_width ) {
+	forward_reshape( output_gradient , input_gradient , output_channels , input_channels , batch_size , output_height , input_height , output_width , input_width );
+}
+
+std::tuple<uint32_t,uint32_t,uint32_t,uint32_t> buffer_sizes_reshape( uint32_t input_channels , uint32_t output_channels , uint32_t batch_size , uint32_t input_height , uint32_t output_height , uint32_t input_width , uint32_t output_width ) {
+	return (std::tuple<uint32_t,uint32_t,uint32_t,uint32_t>(output_channels*batch_size*output_height*output_width,input_channels*batch_size*input_height*input_width,0,0));
+}
+
 void cross_entropy_forward( Buffer output , Buffer target , Buffer objective , uint32_t channels , uint32_t batch_size , uint32_t height , uint32_t width ) { // {{{
 	uint_fast32_t i,j,k,m,n;
 	float eps;
@@ -719,6 +855,26 @@ void parameter_norm_clipping( Buffers& layer_parameters , float maximum_norm_per
 	if( parameter_norm > sqrt(n) * maximum_norm_per_parameter ) {
 		scale( layer_parameters , sqrt(n) * maximum_norm_per_parameter / parameter_norm );
 	}
+}
+
+// why do i have to wait for c++17 to get a c++y way of reading directories?
+// dirent.h is OK, but it's a C library, not a C++ library.
+std::shared_ptr<std::vector<std::string>> get_dir_entries( const std::string& dirname ) {
+	DIR* dir;
+	struct dirent* direntry;
+	std::shared_ptr<std::vector<std::string>> list = std::shared_ptr<std::vector<std::string>>(new std::vector<std::string>());
+	if( NULL == ( dir = opendir( dirname.c_str() ) ) ) {
+		throw std::domain_error( std::string( "can't open directory \"" ) + dirname + "\"" );
+	}
+	direntry = readdir( dir );
+	while ( NULL != direntry ) {
+		if( strncmp( "." , direntry->d_name , 1 ) && strncmp( ".." , direntry->d_name , 2 ) ) {
+			list->push_back( direntry->d_name );
+		}
+		direntry = readdir( dir );
+	}
+	closedir( dir );
+	return list;
 }
 
 // vim: ts=8 : autoindent : textwidth=0 : foldmethod=marker

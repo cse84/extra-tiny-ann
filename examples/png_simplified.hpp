@@ -15,7 +15,16 @@
  *
  */
 
+#include <stdexcept>
 #include <png.h>
+
+#ifndef CURRENT_FUNCTION_NAME
+#ifdef __GNUC__
+#define CURRENT_FUNCTION_NAME __PRETTY_FUNCTION__
+#else
+#define CURRENT_FUNCTION_NAME __func__
+#endif
+#endif
 
 #pragma pack(push, 1)
 struct png_image_t {
@@ -82,4 +91,38 @@ struct png_image_t read_png_file( std::string filename ) {
 	fclose(fp);
 	png_destroy_read_struct(&png, &info, NULL);
 	return result;
+}
+
+void write_png_file( struct png_image_t image , std::string filename ) {
+	FILE* fp = fopen( filename.c_str() , "wb" );
+	if( NULL == fp ) {
+		throw std::length_error( std::string( CURRENT_FUNCTION_NAME ) + ": error while trying to open PNG image '" + filename + "'" );
+	}
+	png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+	if(!png) {
+		throw std::length_error( std::string( CURRENT_FUNCTION_NAME ) + ": error while trying to write PNG image '" + filename + "'" );
+	}
+	png_infop info = png_create_info_struct(png);
+	if(!info) {
+		throw std::length_error( std::string( CURRENT_FUNCTION_NAME ) + ": error while trying to write PNG image '" + filename + "'" );
+	}
+	if(setjmp(png_jmpbuf(png))) {
+		throw std::length_error( std::string( CURRENT_FUNCTION_NAME ) + ": error while trying to write PNG image '" + filename + "'" );
+	}
+	png_init_io( png , fp );
+	// Output is 8bit depth, RGB format.
+	png_set_IHDR( png , info , image.width , image.height , 8 , PNG_COLOR_TYPE_RGB , PNG_INTERLACE_NONE , PNG_COMPRESSION_TYPE_DEFAULT , PNG_FILTER_TYPE_DEFAULT );
+	png_write_info( png , info );
+	png_set_filler(png, 0, PNG_FILLER_AFTER);
+	if (!(image.row_pointers)) {
+		throw std::length_error( std::string( CURRENT_FUNCTION_NAME ) + ": error while trying to write PNG image '" + filename + "'" );
+	}
+	png_write_image( png , image.row_pointers );
+	png_write_end( png , NULL );
+	for(int y = 0; y < image.height; y++) {
+		free( image.row_pointers[y] );
+	}
+	free( image.row_pointers );
+	fclose(fp);
+	png_destroy_write_struct(&png, &info);
 }
