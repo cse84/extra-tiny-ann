@@ -106,7 +106,6 @@ void forward_and_backward( Buffers& layer_inputs , Buffers& layer_outputs , Buff
 	}
 	forward_reshape( layer_inputs[29] , layer_outputs[29] , channels , channels / 2 , batch_size , height / 2 , height / 2 , width / 2 , width );
 	forward_reshape( layer_inputs[30] , layer_outputs[30] , channels / 2 , channels / 4 , batch_size , height / 2 , height , width , width );
-	//std::cerr << "woop " << (layer_parameters[31]->size()) << std::endl;
 	forward_depthwise_convolution( layer_inputs[31] , layer_outputs[31] , layer_parameters[31] , channels / 4 , channels / 4 , batch_size , height , width , 3 , 3 );
 	forward_pointwise_convolution( layer_inputs[32] , layer_outputs[32] , layer_parameters[32] , channels / 4 , 3 , batch_size , height , width );
 	forward_bias( layer_inputs[33] , layer_outputs[33] , layer_parameters[33] , 3 , 3 , batch_size , height , width );
@@ -134,9 +133,6 @@ void forward_and_backward( Buffers& layer_inputs , Buffers& layer_outputs , Buff
 	backward_pointwise_convolution( layer_outputs[2] , layer_output_gradients[2] , layer_input_gradients[2] , layer_parameters[2] , 12 , channels , batch_size , height / 2 , width / 2 );
 	backward_reshape( layer_outputs[1] , layer_output_gradients[1] , layer_input_gradients[1] , layer_parameters[1] , 6 , 12 , batch_size , height / 2 , height / 2 , width , width / 2 );
 	backward_reshape( layer_outputs[0] , layer_output_gradients[0] , layer_input_gradients[0] , layer_parameters[0] , 3 , 6 , batch_size , height , height / 2 , width , width );
-	//for( int i = 0 ; i < (layer_input_gradients[0]->size()) ; i++ ) {
-	//	std::cerr << (layer_input_gradients[0]->at(i)) << " ";
-	//}
 	if( no_param_gradient ) {
 		return;
 	}
@@ -152,50 +148,6 @@ void forward_and_backward( Buffers& layer_inputs , Buffers& layer_outputs , Buff
 	}
 	param_gradient_bias( layer_inputs[3] , layer_output_gradients[3] , layer_parameter_gradients[3] , channels , channels , batch_size , height / 2 , width / 2 );
 	param_gradient_pointwise_convolution( layer_inputs[2] , layer_output_gradients[2] , layer_parameter_gradients[2] , 12 , channels , batch_size , height / 2 , width / 2 );
-	//for( int i = 0 ; i < (layer_parameter_gradients[2]->size()) ; i++ ) {
-	//	std::cerr << (layer_parameter_gradients[2]->at(i)) << " ";
-	//}
-} // }}}
-
-void forward_and_backward2( Buffers& layer_inputs , Buffers& layer_outputs , Buffers& layer_input_gradients , Buffers& layer_output_gradients , const Buffers& layer_parameters , Buffers& layer_parameter_gradients , Buffers& extra_data , Buffer target , Buffer objective , uint32_t channels , uint32_t batch_size , uint32_t height , uint32_t width , bool forward_only , bool no_param_gradient ) { // {{{
-	forward_reshape( layer_inputs[0] , layer_outputs[0] , 3 , 6 , batch_size , height , height / 2 , width , width );
-	forward_reshape( layer_inputs[1] , layer_outputs[1] , 6 , 12 , batch_size , height / 2 , height / 2 , width , width / 2 );
-	forward_pointwise_convolution( layer_inputs[2] , layer_outputs[2] , layer_parameters[2] , 12 , 12 , batch_size , height / 2 , width / 2 );
-	forward_reshape( layer_inputs[3] , layer_outputs[3] , 12 , 6 , batch_size , height / 2 , height / 2 , width / 2 , width );
-	forward_reshape( layer_inputs[4] , layer_outputs[4] , 6 , 3 , batch_size , height / 2 , height , width , width );
-	forward_bias( layer_inputs[5] , layer_outputs[5] , layer_parameters[5] , 3 , 3 , batch_size , height , width );
-	l2_forward( layer_outputs[5] , target , objective , 3 , batch_size , height , width ); //loss function
-	if( forward_only ) {
-		return;
-	}
-	l2_backward( layer_outputs[5] , target , layer_output_gradients[5] , 3 , batch_size , height , width ); //loss gradient
-	backward_bias( layer_outputs[5] , layer_output_gradients[5] , layer_input_gradients[5] , layer_parameters[5] , 3 , 3 , batch_size , height , width );
-	backward_reshape( layer_outputs[4] , layer_output_gradients[4] , layer_input_gradients[4] , layer_parameters[4] , 6 , 3 , batch_size , height / 2 , height , width , width );
-	backward_reshape( layer_outputs[3] , layer_output_gradients[3] , layer_input_gradients[3] , layer_parameters[3] , 12 , 6 , batch_size , height / 2 , height / 2 , width / 2 , width );
-	backward_pointwise_convolution( layer_outputs[2] , layer_output_gradients[2] , layer_input_gradients[2] , layer_parameters[2] , 12 , 12 , batch_size , height / 2 , width / 2 );
-	backward_reshape( layer_outputs[1] , layer_output_gradients[1] , layer_input_gradients[1] , layer_parameters[1] , 6 , 12 , batch_size , height / 2 , height / 2 , width , width / 2 );
-	backward_reshape( layer_outputs[0] , layer_output_gradients[0] , layer_input_gradients[0] , layer_parameters[0] , 3 , 6 , batch_size , height , height / 2 , width , width );
-	if( no_param_gradient ) {
-		return;
-	}
-	param_gradient_bias( layer_inputs[5] , layer_output_gradients[5] , layer_parameter_gradients[5] , 3 , 3 , batch_size , height , width );
-	param_gradient_pointwise_convolution( layer_inputs[2] , layer_output_gradients[2] , layer_parameter_gradients[2] , 12 , 12 , batch_size , height / 2 , width / 2 );
-} // }}}
-
-void forward_and_backward3( Buffers& layer_inputs , Buffers& layer_outputs , Buffers& layer_input_gradients , Buffers& layer_output_gradients , const Buffers& layer_parameters , Buffers& layer_parameter_gradients , Buffers& extra_data , Buffer target , Buffer objective , uint32_t channels , uint32_t batch_size , uint32_t height , uint32_t width , bool forward_only , bool no_param_gradient ) { // {{{
-	forward_pointwise_convolution( layer_inputs[0] , layer_outputs[0] , layer_parameters[0] , 3 , 3 , batch_size , height , width );
-	forward_bias( layer_inputs[1] , layer_outputs[1] , layer_parameters[1] , 3 , 3 , batch_size , height , width );
-	l2_forward( layer_outputs[1] , target , objective , 3 , batch_size , height , width ); //loss function
-	if( forward_only ) {
-		return;
-	}
-	l2_backward( layer_outputs[1] , target , layer_output_gradients[1] , 3 , batch_size , height , width ); //loss gradient
-	backward_bias( layer_outputs[1] , layer_output_gradients[1] , layer_input_gradients[1] , layer_parameters[1] , 3 , 3 , batch_size , height , width );
-	backward_pointwise_convolution( layer_outputs[0] , layer_output_gradients[0] , layer_input_gradients[0] , layer_parameters[0] , 3 , 3 , batch_size , height , width );
-	if( no_param_gradient ) {
-		return;
-	}
-	param_gradient_bias( layer_inputs[0] , layer_output_gradients[0] , layer_parameter_gradients[0] , 3 , 3 , batch_size , height , width );
 } // }}}
 
 void set_up_buffers( Buffers& layer_inputs , Buffers& layer_outputs , Buffers& layer_input_gradients , Buffers& layer_output_gradients , Buffers& layer_parameters , Buffers& layer_parameter_gradients , Buffers& layer_parameter_gradients2 , Buffers& extra_data , Buffers& layer_parameter_updates , Buffers& layer_1st_moment_estimates , Buffers& layer_2nd_moment_estimates , Buffer& target , Buffer& objective , uint32_t channels , uint32_t batch_size , uint32_t height , uint32_t width , bool forward_only , bool no_param_gradient , bool set_up_thread_independent_buffers ) { // {{{
@@ -231,137 +183,6 @@ void set_up_buffers( Buffers& layer_inputs , Buffers& layer_outputs , Buffers& l
 	}
 	extra_data.resize(buffer_sizes.size());
 	for( i = 0 ; i < buffer_sizes.size() ; i++ ) {
-	std::cerr << i << " " << (std::get<0>(buffer_sizes.at(i))) << " " << (std::get<1>(buffer_sizes.at(i))) << " " << (std::get<2>(buffer_sizes.at(i))) << " " << (std::get<3>(buffer_sizes.at(i))) << std::endl;
-		layer_outputs.at(i) = Buffer(new std::vector<float>(std::get<0>(buffer_sizes.at(i))));
-		if( 0 == i ) {
-			layer_inputs.at(i) = Buffer(new std::vector<float>(std::get<1>(buffer_sizes.front())));
-		} else {
-			layer_inputs.at(i) = layer_outputs.at(i-1);
-		}
-		extra_data.at(i) = Buffer(new std::vector<float>(std::get<3>(buffer_sizes.at(i))));
-		if( set_up_thread_independent_buffers ) {
-			layer_parameters.at(i) = Buffer(new std::vector<float>(std::get<2>(buffer_sizes.at(i))));
-		}
-		if( forward_only || no_param_gradient ) {
-			continue;
-		}
-		layer_parameter_gradients.at(i) = Buffer(new std::vector<float>(std::get<2>(buffer_sizes.at(i))));
-		if( set_up_thread_independent_buffers ) {
-			layer_parameter_gradients2.at(i) = Buffer(new std::vector<float>(std::get<2>(buffer_sizes.at(i))));
-			layer_parameter_updates.at(i) = Buffer(new std::vector<float>(std::get<2>(buffer_sizes.at(i))));
-			layer_1st_moment_estimates.at(i) = Buffer(new std::vector<float>(std::get<2>(buffer_sizes.at(i)),0.0));
-			layer_2nd_moment_estimates.at(i) = Buffer(new std::vector<float>(std::get<2>(buffer_sizes.at(i)),0.0));
-		}
-	}
-	target = Buffer(new std::vector<float>(std::get<0>(buffer_sizes.back())));
-	objective = Buffer(new std::vector<float>(batch_size));
-	if( forward_only ) {
-		return;
-	}
-	for( i = 0 ; i < buffer_sizes.size() ; i++ ) {
-		layer_input_gradients.at(i) = Buffer(new std::vector<float>(std::get<1>(buffer_sizes.at(i))));
-	}
-	for( i = 0 ; i < buffer_sizes.size()-1 ; i++ ) {
-		layer_output_gradients.at(i) = layer_input_gradients.at(i+1);
-	}
-	layer_output_gradients.at(buffer_sizes.size()-1) = Buffer(new std::vector<float>(std::get<0>(buffer_sizes.at(i))));
-	for( i = 0 ; i < buffer_sizes.size() ; i++ ) {
-		//if( layer_outputs.at(i)->size() != layer_output_gradients.at(i)->size() ) {
-		//	std::cerr << "whoopsie, buffer size mismatch: " << (layer_outputs.at(i)->size()) << " != " << (layer_output_gradients.at(i)->size()) << std::endl;
-		//}
-		//if( layer_inputs.at(i)->size() != layer_input_gradients.at(i)->size() ) {
-		//	std::cerr << "whoopsie, buffer size mismatch: " << (layer_inputs.at(i)->size()) << " != " << (layer_input_gradients.at(i)->size()) << std::endl;
-		//}
-	}
-} // }}}
-
-void set_up_buffers2( Buffers& layer_inputs , Buffers& layer_outputs , Buffers& layer_input_gradients , Buffers& layer_output_gradients , Buffers& layer_parameters , Buffers& layer_parameter_gradients , Buffers& layer_parameter_gradients2 , Buffers& extra_data , Buffers& layer_parameter_updates , Buffers& layer_1st_moment_estimates , Buffers& layer_2nd_moment_estimates , Buffer& target , Buffer& objective , uint32_t channels , uint32_t batch_size , uint32_t height , uint32_t width , bool forward_only , bool no_param_gradient , bool set_up_thread_independent_buffers ) { // {{{
-	uint32_t i;
-	std::vector<std::tuple<uint32_t,uint32_t,uint32_t,uint32_t>> buffer_sizes = std::vector<std::tuple<uint32_t,uint32_t,uint32_t,uint32_t>>();
-	buffer_sizes.push_back(buffer_sizes_reshape( 3 , 6 , batch_size , height , height / 2 , width , width ));
-	buffer_sizes.push_back(buffer_sizes_reshape( 6 , 12 , batch_size , height / 2 , height / 2 , width , width / 2 ));
-	buffer_sizes.push_back(buffer_sizes_pointwise_convolution( 12 , 12 , batch_size , height / 2 , width / 2 ));
-	buffer_sizes.push_back(buffer_sizes_reshape( 12 , 6 , batch_size , height / 2 , height / 2 , width / 2 , width ));
-	buffer_sizes.push_back(buffer_sizes_reshape( 6 , 3 , batch_size , height / 2 , height , width , width ));
-	buffer_sizes.push_back(buffer_sizes_bias( 3 , 3 , batch_size , height , width ));
-	layer_inputs.resize(buffer_sizes.size());
-	layer_outputs.resize(buffer_sizes.size());
-	layer_input_gradients.resize(buffer_sizes.size());
-	layer_output_gradients.resize(buffer_sizes.size());
-	layer_parameter_gradients.resize(buffer_sizes.size());
-	if( set_up_thread_independent_buffers ) {
-		layer_parameters.resize(buffer_sizes.size());
-		layer_parameter_gradients2.resize(buffer_sizes.size());
-		layer_parameter_updates.resize(buffer_sizes.size());
-		layer_1st_moment_estimates.resize(buffer_sizes.size());
-		layer_2nd_moment_estimates.resize(buffer_sizes.size());
-	}
-	extra_data.resize(buffer_sizes.size());
-	for( i = 0 ; i < buffer_sizes.size() ; i++ ) {
-	std::cerr << i << " " << (std::get<0>(buffer_sizes.at(i))) << " " << (std::get<1>(buffer_sizes.at(i))) << " " << (std::get<2>(buffer_sizes.at(i))) << " " << (std::get<3>(buffer_sizes.at(i))) << std::endl;
-		layer_outputs.at(i) = Buffer(new std::vector<float>(std::get<0>(buffer_sizes.at(i))));
-		if( 0 == i ) {
-			layer_inputs.at(i) = Buffer(new std::vector<float>(std::get<1>(buffer_sizes.front())));
-		} else {
-			layer_inputs.at(i) = layer_outputs.at(i-1);
-		}
-		extra_data.at(i) = Buffer(new std::vector<float>(std::get<3>(buffer_sizes.at(i))));
-		if( set_up_thread_independent_buffers ) {
-			layer_parameters.at(i) = Buffer(new std::vector<float>(std::get<2>(buffer_sizes.at(i))));
-		}
-		if( forward_only || no_param_gradient ) {
-			continue;
-		}
-		layer_parameter_gradients.at(i) = Buffer(new std::vector<float>(std::get<2>(buffer_sizes.at(i))));
-		if( set_up_thread_independent_buffers ) {
-			layer_parameter_gradients2.at(i) = Buffer(new std::vector<float>(std::get<2>(buffer_sizes.at(i))));
-			layer_parameter_updates.at(i) = Buffer(new std::vector<float>(std::get<2>(buffer_sizes.at(i))));
-			layer_1st_moment_estimates.at(i) = Buffer(new std::vector<float>(std::get<2>(buffer_sizes.at(i)),0.0));
-			layer_2nd_moment_estimates.at(i) = Buffer(new std::vector<float>(std::get<2>(buffer_sizes.at(i)),0.0));
-		}
-	}
-	target = Buffer(new std::vector<float>(std::get<0>(buffer_sizes.back())));
-	objective = Buffer(new std::vector<float>(batch_size));
-	if( forward_only ) {
-		return;
-	}
-	for( i = 0 ; i < buffer_sizes.size() ; i++ ) {
-		layer_input_gradients.at(i) = Buffer(new std::vector<float>(std::get<1>(buffer_sizes.at(i))));
-	}
-	for( i = 0 ; i < buffer_sizes.size()-1 ; i++ ) {
-		layer_output_gradients.at(i) = layer_input_gradients.at(i+1);
-	}
-	layer_output_gradients.at(buffer_sizes.size()-1) = Buffer(new std::vector<float>(std::get<0>(buffer_sizes.at(i))));
-	for( i = 0 ; i < buffer_sizes.size() ; i++ ) {
-		//if( layer_outputs.at(i)->size() != layer_output_gradients.at(i)->size() ) {
-		//	std::cerr << "whoopsie, buffer size mismatch: " << (layer_outputs.at(i)->size()) << " != " << (layer_output_gradients.at(i)->size()) << std::endl;
-		//}
-		//if( layer_inputs.at(i)->size() != layer_input_gradients.at(i)->size() ) {
-		//	std::cerr << "whoopsie, buffer size mismatch: " << (layer_inputs.at(i)->size()) << " != " << (layer_input_gradients.at(i)->size()) << std::endl;
-		//}
-	}
-} // }}}
-
-void set_up_buffers3( Buffers& layer_inputs , Buffers& layer_outputs , Buffers& layer_input_gradients , Buffers& layer_output_gradients , Buffers& layer_parameters , Buffers& layer_parameter_gradients , Buffers& layer_parameter_gradients2 , Buffers& extra_data , Buffers& layer_parameter_updates , Buffers& layer_1st_moment_estimates , Buffers& layer_2nd_moment_estimates , Buffer& target , Buffer& objective , uint32_t channels , uint32_t batch_size , uint32_t height , uint32_t width , bool forward_only , bool no_param_gradient , bool set_up_thread_independent_buffers ) { // {{{
-	uint32_t i;
-	std::vector<std::tuple<uint32_t,uint32_t,uint32_t,uint32_t>> buffer_sizes = std::vector<std::tuple<uint32_t,uint32_t,uint32_t,uint32_t>>();
-	buffer_sizes.push_back(buffer_sizes_pointwise_convolution( 3 , 3 , batch_size , height , width ));
-	buffer_sizes.push_back(buffer_sizes_bias( 3 , 3 , batch_size , height , width ));
-	layer_inputs.resize(buffer_sizes.size());
-	layer_outputs.resize(buffer_sizes.size());
-	layer_input_gradients.resize(buffer_sizes.size());
-	layer_output_gradients.resize(buffer_sizes.size());
-	layer_parameter_gradients.resize(buffer_sizes.size());
-	if( set_up_thread_independent_buffers ) {
-		layer_parameters.resize(buffer_sizes.size());
-		layer_parameter_gradients2.resize(buffer_sizes.size());
-		layer_parameter_updates.resize(buffer_sizes.size());
-		layer_1st_moment_estimates.resize(buffer_sizes.size());
-		layer_2nd_moment_estimates.resize(buffer_sizes.size());
-	}
-	extra_data.resize(buffer_sizes.size());
-	for( i = 0 ; i < buffer_sizes.size() ; i++ ) {
-	std::cerr << i << " " << (std::get<0>(buffer_sizes.at(i))) << " " << (std::get<1>(buffer_sizes.at(i))) << " " << (std::get<2>(buffer_sizes.at(i))) << " " << (std::get<3>(buffer_sizes.at(i))) << std::endl;
 		layer_outputs.at(i) = Buffer(new std::vector<float>(std::get<0>(buffer_sizes.at(i))));
 		if( 0 == i ) {
 			layer_inputs.at(i) = Buffer(new std::vector<float>(std::get<1>(buffer_sizes.front())));
@@ -696,13 +517,11 @@ int main( int argc, char** argv ) {
 		return 1;
 	}
 	Buffers layer_parameters;
-	//std::ifstream parameter_file = std::ifstream( "../../dunno_yet_needs_different_network.out" , std::ifstream::in | std::ifstream::binary );
 	std::ifstream parameter_file = std::ifstream( "extra_tiny_super_resolution_parameters.out" , std::ifstream::in | std::ifstream::binary );
 	if( parameter_file.bad() ) {
 		throw std::length_error( std::string( CURRENT_FUNCTION_NAME ) + ": error while trying to open extra_tiny_super_resolution_parameters.out" );
 	}
 	uint32_t temp,row,col,row_offset,col_offset;
-	uint_fast32_t temp2;
 	try {
 		parameter_file.read( (char*) &temp , sizeof(uint32_t) );
 		layer_parameters.resize(temp);
@@ -734,27 +553,6 @@ int main( int argc, char** argv ) {
 	uint32_t batch_size = 1;
 	uint32_t height = 64;
 	uint32_t width = 64;
-		//set_up_buffers( layer_inputs , layer_outputs , layer_input_gradients , layer_output_gradients , layer_parameters , layer_parameter_gradients , layer_parameter_gradients2 , extra_data , layer_parameter_updates , layer_1st_moment_estimates , layer_2nd_moment_estimates , target , objective , channels , batch_size , height , width , true , true , true );
-		////i wanted to load parameters trained with sr5.cpp, only to discover that due to a small bug there this will be impossible until i train a new net without that bug.
-		////but thanks to random parameters, i now know that parameters were not really the problem, this code is the problem.
-		//try {
-		//	parameter_file.read( (char*) &temp2 , sizeof(uint_fast32_t) );
-		//	parameter_file.read( (char*) &temp2 , sizeof(uint_fast32_t) );
-		//	std::cerr << "yay " << temp2 << std::endl;
-		//	for( Buffer& buffer : layer_parameters ) {
-		//		if( 0 < buffer->size() ) {
-		//			parameter_file.read( (char*) (buffer->data()) , sizeof(float) * buffer->size() );
-		//		}
-		//	}
-		//} catch(...) {
-		//	std::cerr << "error while trying to read from ../../dunno_yet_needs_different_network.out because of: " << std::endl;
-		//	throw;
-		//}
-	//std::mt19937 rng;
-	//rng.seed(666);
-	//gaussian_init_parameters( layer_parameters , rng , 0.13 );
-	//set_up_buffers3( layer_inputs , layer_outputs , layer_input_gradients , layer_output_gradients , dummy , layer_parameter_gradients , layer_parameter_gradients2 , extra_data , layer_parameter_updates , layer_1st_moment_estimates , layer_2nd_moment_estimates , target , objective , channels , batch_size , height , width , true , true , true );
-	//set_up_buffers2( layer_inputs , layer_outputs , layer_input_gradients , layer_output_gradients , dummy , layer_parameter_gradients , layer_parameter_gradients2 , extra_data , layer_parameter_updates , layer_1st_moment_estimates , layer_2nd_moment_estimates , target , objective , channels , batch_size , height , width , true , true , true );
 	set_up_buffers( layer_inputs , layer_outputs , layer_input_gradients , layer_output_gradients , dummy , layer_parameter_gradients , layer_parameter_gradients2 , extra_data , layer_parameter_updates , layer_1st_moment_estimates , layer_2nd_moment_estimates , target , objective , channels , batch_size , height , width , true , true , true );
 	struct png_image_t input_image = read_png_file( std::string(argv[1]) );
 	struct png_image_t output_image;
@@ -765,7 +563,7 @@ int main( int argc, char** argv ) {
 	output_image.color_type = input_image.color_type;
 	output_image.bit_depth = input_image.bit_depth;
 	output_image.row_pointers = static_cast<png_bytep*>(malloc(sizeof(png_bytep) * output_image.height));
-	for( row = 0; row < output_image.height; row++) {
+	for( row = 0 ; row < static_cast<uint32_t>(output_image.height) ; row++ ) {
 		//NB: this is a hack. you actually need png_get_rowbytes() to tell you how many bytes are in a row -_- . i'm gonna guess this. don't do this at home.
 		output_image.row_pointers[row] = static_cast<png_bytep>(malloc( 4 * sizeof(png_byte) * output_image.width ));
 	}
@@ -773,8 +571,8 @@ int main( int argc, char** argv ) {
 	png_bytep px = NULL;
 	//this goes through the input image in 32x32-pixel-patches (64x64 on the output side). processing the entire input image at once
 	//is possible, but requires unreasonable amounts of RAM (approximately number of pixels times number of channels times number of layers time sizeof(float)).
-	for( row_offset = 0 ; row_offset < (input_image.height/32) ; row_offset++ ) {
-		for( col_offset = 0 ; col_offset < (input_image.width/32) ; col_offset++ ) {
+	for( row_offset = 0 ; row_offset < static_cast<uint32_t>(input_image.height/32) ; row_offset++ ) {
+		for( col_offset = 0 ; col_offset < static_cast<uint32_t>(input_image.width/32) ; col_offset++ ) {
 			//NB: if the down-/upsampling method is changed, the entire body of this loop needs to be replaced.
 			for( row = 0 ; row < 64 ; row++ ) {
 				rowp = input_image.row_pointers[(64*row_offset+row)/2]; //every 2nd input row will be the same
@@ -785,8 +583,6 @@ int main( int argc, char** argv ) {
 					layer_inputs[0]->at( 2 * batch_size * 64 * 64 + row * 64 + col ) = px[2] / 255.0;
 				}
 			}
-			//forward_and_backward3( layer_inputs , layer_outputs , layer_input_gradients , layer_output_gradients , layer_parameters , layer_parameter_gradients , extra_data , target , objective , channels , batch_size , height , width , true , true );
-			//forward_and_backward2( layer_inputs , layer_outputs , layer_input_gradients , layer_output_gradients , layer_parameters , layer_parameter_gradients , extra_data , target , objective , channels , batch_size , height , width , true , true );
 			forward_and_backward( layer_inputs , layer_outputs , layer_input_gradients , layer_output_gradients , layer_parameters , layer_parameter_gradients , extra_data , target , objective , channels , batch_size , height , width , true , true );
 			for( row = 0 ; row < 64 ; row++ ) {
 				rowp = output_image.row_pointers[64*row_offset+row];
@@ -794,11 +590,11 @@ int main( int argc, char** argv ) {
 					px = &(rowp[(64*col_offset+col) * 4]);
 					//the target for the network during training was the residual, so now we have to add the output of the network to its
 					//input to get the final upsampled image.
-					px[0] = static_cast<png_byte>( round( 255.0 * ( clamp(	/*0.5*/layer_inputs[0]->at( 0 * batch_size * 64 * 64 + row * 64 + col ) +
+					px[0] = static_cast<png_byte>( round( 255.0 * ( clamp(	layer_inputs[0]->at( 0 * batch_size * 64 * 64 + row * 64 + col ) +
 												layer_outputs.back()->at( 0 * batch_size * 64 * 64 + row * 64 + col ) ) ) ) );
-					px[1] = static_cast<png_byte>( round( 255.0 * ( clamp(	/*0.5*/layer_inputs[0]->at( 1 * batch_size * 64 * 64 + row * 64 + col ) +
+					px[1] = static_cast<png_byte>( round( 255.0 * ( clamp(	layer_inputs[0]->at( 1 * batch_size * 64 * 64 + row * 64 + col ) +
 												layer_outputs.back()->at( 1 * batch_size * 64 * 64 + row * 64 + col ) ) ) ) );
-					px[2] = static_cast<png_byte>( round( 255.0 * ( clamp(	/*0.5*/layer_inputs[0]->at( 2 * batch_size * 64 * 64 + row * 64 + col ) +
+					px[2] = static_cast<png_byte>( round( 255.0 * ( clamp(	layer_inputs[0]->at( 2 * batch_size * 64 * 64 + row * 64 + col ) +
 												layer_outputs.back()->at( 2 * batch_size * 64 * 64 + row * 64 + col ) ) ) ) );
 				}
 			}
@@ -806,48 +602,8 @@ int main( int argc, char** argv ) {
 		}
 	}
 	std::cerr << std::endl;
-	std::cout << "P3" << std::endl << (output_image.width) << " " << (output_image.height) << std::endl << "255" << std::endl;
-	for( row = 0 ; row < output_image.height ; row++ ) {
-		rowp = output_image.row_pointers[row];
-		for( col = 0 ; col < output_image.width ; col++ ) {
-			px = &(rowp[col * 4]);
-			std::cout << ((int)(px[0])) << " " << ((int)(px[1])) << " " << ((int)(px[2])) << " ";
-		}
-		std::cout << std::endl;
-	}
 	write_png_file( output_image , std::string(argv[1])+"_superresolved.png" );
 	return 0;
 }
-
-//test data generation
-//int main( int argc, char** argv ) {
-//	uint32_t row,col;
-//	std::mt19937 rng;
-//	Buffer data = Buffer( new std::vector<float>( 3 * 64 * 64 ) );
-//	Buffer target = Buffer( new std::vector<float>( 3 * 64 * 64 ) );
-//	SR_Data_Buffer sr_data_buffer = load_super_resolution_data( std::string(argv[1]) );
-//	generate_data_and_targets( sr_data_buffer , rng , data , target , 1 );
-//	struct png_image_t output_image;
-//	output_image.width = 64;
-//	output_image.height = 64;
-//	output_image.color_type = PNG_COLOR_TYPE_RGB;
-//	output_image.bit_depth = 8;
-//	output_image.row_pointers = static_cast<png_bytep*>(malloc(sizeof(png_bytep) * output_image.height));
-//	png_bytep rowp = NULL;
-//	png_bytep px = NULL;
-//	for( row = 0; row < 64 ; row++ ) {
-//		output_image.row_pointers[row] = static_cast<png_bytep>(malloc( 4 * sizeof(png_byte) * output_image.width ));
-//	}
-//	for( row = 0; row < 64 ; row++ ) {
-//		rowp = output_image.row_pointers[row];
-//		for( col = 0; col < 64 ; col++ ) {
-//			px = &(rowp[col * 4]);
-//			px[0] = static_cast<png_byte>( round( 255.0 * ( clamp(	0.5 + target->at( 0 * 64 * 64 + row * 64 + col ) ) ) ) );
-//			px[1] = static_cast<png_byte>( round( 255.0 * ( clamp(	0.5 + target->at( 1 * 64 * 64 + row * 64 + col ) ) ) ) );
-//			px[2] = static_cast<png_byte>( round( 255.0 * ( clamp(	0.5 + target->at( 2 * 64 * 64 + row * 64 + col ) ) ) ) );
-//		}
-//	}
-//	write_png_file( output_image , "/tmp/woop.png" );
-//}
 
 // vim: ts=8 : autoindent : textwidth=0 : foldmethod=marker

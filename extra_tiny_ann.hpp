@@ -639,22 +639,15 @@ void shuffle( const Buffer input_data , Buffer output_data , uint32_t outer , ui
 	m = cols * rows * mids;
 	a = mids * cols;
 	b = mids * rows;
-	//float output_array[outer][cols][mids][rows][element_size] = output_data->data();
-	//float input_array[outer][rows][mids][cols][element_size] = input_data->data();
-	//std::cerr << "shuffle " << outer << " " << cols << " " << mids << " " << rows << " " << element_size << std::endl;
 	for( i = 0 ; i < outer ; i++ ) {
 		for( col = 0 ; col < cols ; col++ ) {
 			for( mid = 0 ; mid < mids ; mid++ ) {
 				if( 1 == element_size ) {
 					for( row = 0 ; row < rows ; row++ ) {
-						//std::cerr << "shuffle2 " << i << " " << col << " " << mid << " " << row << " " << ( i * m + col * b + mid * rows + row ) << " " << ( i * m + row * a + mid * cols + col ) << std::endl;
 						(*output_data)[ i * m + col * b + mid * rows + row ] = (*input_data)[ i * m + row * a + mid * cols + col ];
 					}
 				} else {
 					for( row = 0 ; row < rows ; row++ ) {
-						//memcpy(	&(output_array[i][col][mid][row][0]) ,
-						//	 &(input_array[i][row][mid][col][0]) , element_size * sizeof( float ) );
-						//std::cerr << "shuffle2 " << i << " " << col << " " << mid << " " << row << " " << ( i * m + col * b + mid * rows + row ) << " " << ( i * m + row * a + mid * cols + col ) << std::endl;
 						memcpy(	output_data->data() + ( i * m + col * b + mid * rows + row ) * element_size ,
 							input_data->data() + ( i * m + row * a + mid * cols + col ) * element_size , element_size * sizeof( float ) );
 					}
@@ -668,55 +661,6 @@ void forward_reshape( const Buffer input , Buffer output , uint32_t input_channe
 	if( input_channels * input_height * input_width != output_channels * output_height * output_width ) {
 		throw std::length_error( std::string( CURRENT_FUNCTION_NAME ) + ": total volume must not change" );
 	}
-	//if( input_width == output_width ) {
-	//	if( output_channels < input_channels ) { //upsample rows (reduce channels,increase rows)
-	//		if( 0 != input_channels % output_channels ) {
-	//			throw std::length_error( std::string( CURRENT_FUNCTION_NAME ) + ": input_channels must be divisible by output_channels" );
-	//		}
-	//		std::cerr << "imma upsample " << (input_channels / output_channels) << std::endl;
-	//		shuffle( input , output , output_channels , input_height * batch_size , 1 , input_channels / output_channels , input_width ); // seems to be correct
-	//		//shuffle( input , output , output_channels , input_channels / output_channels , batch_size , input_height , input_width );
-	//		//shuffle( input , output , output_channels , output_channels * input_height , batch_size , input_channels / output_channels , input_width );
-	//				//this->rows = output_height / input_height;
-	//				//this->columns = output_channels * input_height;
-	//		//shuffle( input , output , input_height , 1 , input_channels , input_width );
-	//	} else { //downsample rows (reduce rows,increase channels)
-	//		if( 0 != output_channels % input_channels ) {
-	//			throw std::length_error( std::string( CURRENT_FUNCTION_NAME ) + ": input_channels must be divisible by output_channels" );
-	//		}
-	//		std::cerr << "imma downsample " << (output_channels / input_channels) << std::endl;
-	//		shuffle( input , output , input_channels , output_channels / input_channels , 1 , output_height * batch_size , output_width ); // seems to be correct
-	//		//shuffle( input , output , input_channels * batch_size , output_channels / input_channels , 1 , output_height , output_width );
-	//		//shuffle( input , output , input_channels , output_channels / input_channels , batch_size , output_height , output_width );
-	//		//shuffle( input , output , input_channels , output_height , batch_size , output_channels / input_channels , output_width );
-	//				//this->rows = input_channels * output_height;
-	//				//this->columns = input_height / output_height;
-	//	}
-	//} else if( input_height == output_height ) {
-	//	if( output_channels < input_channels ) {
-	//		//shuffle();
-	//		////shuffle( input , output , input_height , 1 , input_channels , input_width );
-	//	} else {
-	//		//shuffle();
-	//	}
-	//} else if( input_channels == output_channels ) {
-	//	if( output_height < input_height ) { //upsample columns
-	//		if( 0 != output_width % input_width ) {
-	//			throw std::length_error( std::string( CURRENT_FUNCTION_NAME ) + ": output_width must be divisible by input_width" );
-	//		}
-	//		shuffle( input , output , output_channels * batch_size * output_height , input_width , 1 , output_width / input_width , 1 );
-	//		//shuffle( input , output , cols , 1 , rows , 1 );
-	//		////shuffle( input , output , input_height , 1 , input_channels , input_width );
-	//	} else { //downsample columns
-	//		if( 0 != input_width % output_width ) {
-	//			throw std::length_error( std::string( CURRENT_FUNCTION_NAME ) + ": input_width must be divisible by output_width" );
-	//		}
-	//		shuffle( input , output , input_channels * batch_size * input_height , input_width / output_width , 1 , output_width , 1 );
-	//		//shuffle();
-	//	}
-	//} else {
-	//	throw std::domain_error( std::string( CURRENT_FUNCTION_NAME ) + ": please change only 2 of channels, height, width at a time" );
-	//}
 	uint32_t a,b,c,d,e,dividend,divisor;
 	std::string dividend_name,divisor_name;
 	if( input_width == output_width ) {
@@ -731,12 +675,9 @@ void forward_reshape( const Buffer input , Buffer output , uint32_t input_channe
 		if( output_channels < input_channels ) {//upsample columns (reduce channels,increase columns)
 			dividend = input_channels; divisor = output_channels; dividend_name = "input_channels"; divisor_name = "output_channels";
 			a = output_channels; b = input_height * input_width * batch_size; c = 1; d = input_channels / output_channels; e = 1;
-			//shuffle();
-			////shuffle( input , output , input_height , 1 , input_channels , input_width );
 		} else {//upsample columns (reduce columns,increase channels)
 			dividend = output_channels; divisor = input_channels; dividend_name = "output_channels"; divisor_name = "input_channels";
 			a = input_channels; b = output_channels / input_channels; c = 1; d = output_height * output_width * batch_size; e = 1;
-			//shuffle();
 		}
 	} else if( input_channels == output_channels ) {
 		if( input_width < output_width ) { //upsample columns (reduce rows,increase columns)
