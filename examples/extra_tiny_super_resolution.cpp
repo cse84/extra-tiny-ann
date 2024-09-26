@@ -472,138 +472,139 @@ void test( Buffers& layer_parameters , const std::string& dirname ) { // {{{
 	std::cerr << "FLOP/s is approximately " << ((1000000.0*2.0*(((float)width)*((float)width)*length(layer_parameters))*batch_size*iterations)/sum_microseconds) << std::endl;
 } // }}}
 
-//int main( int argc, char** argv ) {
-//	if( 3 != argc ) {
-//		std::cerr << "need 2 directories full of PNG images, 1 for training and 1 for testing" << std::endl;
-//		return 1;
-//	}
-//	Buffers layer_parameters;
-//	//train_multithreaded( layer_parameters , std::string(argv[1]) , 6 );
-//	train( layer_parameters , std::string(argv[1]) );
-//	std::ofstream parameter_file = std::ofstream( "extra_tiny_super_resolution_parameters.out" , std::ofstream::out | std::ofstream::binary );
-//	if( parameter_file.bad() ) {
-//		throw std::length_error( std::string( CURRENT_FUNCTION_NAME ) + ": error while trying to open extra_tiny_super_resolution_parameters.out" );
-//	}
-//	uint32_t temp;
-//	try {
-//		temp = layer_parameters.size();
-//		parameter_file.write( (char*) &temp , sizeof(uint32_t) );
-//		for( Buffer buffer : layer_parameters ) {
-//			temp = buffer->size();
-//			parameter_file.write( (char*) &temp , sizeof(uint32_t) );
-//			if( 0 < buffer->size() ) {
-//				parameter_file.write( (char*) (buffer->data()) , sizeof(float) * buffer->size() );
-//			}
-//		}
-//	} catch(...) {
-//		std::cerr << "error while trying to write to extra_tiny_super_resolution_parameters.out because of: " << std::endl;
-//		throw;
-//	}
-//	std::cerr << "training set evaluation:" << std::endl;
-//	test( layer_parameters , std::string(argv[1]) );
-//	std::cerr << "test set evaluation:" << std::endl;
-//	test( layer_parameters , std::string(argv[2]) );
-//	return 0;
-//}
+int main( int argc, char** argv ) {
+	if( 3 != argc ) {
+		std::cerr << "need 2 directories full of PNG images, 1 for training and 1 for testing" << std::endl;
+		return 1;
+	}
+	Buffers layer_parameters;
+	//train_multithreaded( layer_parameters , std::string(argv[1]) , 6 );
+	train( layer_parameters , std::string(argv[1]) );
+	std::ofstream parameter_file = std::ofstream( "extra_tiny_super_resolution_parameters.out" , std::ofstream::out | std::ofstream::binary );
+	if( parameter_file.bad() ) {
+		throw std::length_error( std::string( CURRENT_FUNCTION_NAME ) + ": error while trying to open extra_tiny_super_resolution_parameters.out" );
+	}
+	uint32_t temp;
+	try {
+		temp = layer_parameters.size();
+		parameter_file.write( (char*) &temp , sizeof(uint32_t) );
+		for( Buffer buffer : layer_parameters ) {
+			temp = buffer->size();
+			parameter_file.write( (char*) &temp , sizeof(uint32_t) );
+			if( 0 < buffer->size() ) {
+				parameter_file.write( (char*) (buffer->data()) , sizeof(float) * buffer->size() );
+			}
+		}
+	} catch(...) {
+		std::cerr << "error while trying to write to extra_tiny_super_resolution_parameters.out because of: " << std::endl;
+		throw;
+	}
+	std::cerr << "training set evaluation:" << std::endl;
+	test( layer_parameters , std::string(argv[1]) );
+	std::cerr << "test set evaluation:" << std::endl;
+	test( layer_parameters , std::string(argv[2]) );
+	return 0;
+}
 
 float clamp( float x ) {
 	return (MIN(1.0,MAX(0.0,x)));
 }
 
-//apply (a.k.a. inference) neural network stored in extra_tiny_super_resolution_parameters.out to a single PNG image
-int main( int argc, char** argv ) {
-	if( 2 != argc ) {
-		std::cerr << "gimme a PNG file please!" << std::endl;
-		return 1;
-	}
-	Buffers layer_parameters;
-	std::ifstream parameter_file = std::ifstream( "extra_tiny_super_resolution_parameters.out" , std::ifstream::in | std::ifstream::binary );
-	if( parameter_file.bad() ) {
-		throw std::length_error( std::string( CURRENT_FUNCTION_NAME ) + ": error while trying to open extra_tiny_super_resolution_parameters.out" );
-	}
-	uint32_t temp,row,col,row_offset,col_offset;
-	try {
-		parameter_file.read( (char*) &temp , sizeof(uint32_t) );
-		layer_parameters.resize(temp);
-		for( Buffer& buffer : layer_parameters ) {
-			parameter_file.read( (char*) &temp , sizeof(uint32_t) );
-			buffer = Buffer(new std::vector<float>(temp));
-			if( 0 < buffer->size() ) {
-				parameter_file.read( (char*) (buffer->data()) , sizeof(float) * buffer->size() );
-			}
-		}
-	} catch(...) {
-		std::cerr << "error while trying to read from extra_tiny_super_resolution_parameters.out because of: " << std::endl;
-		throw;
-	}
-	Buffers layer_inputs;
-	Buffers layer_outputs;
-	Buffers layer_input_gradients;
-	Buffers layer_output_gradients;
-	Buffers layer_parameter_gradients;
-	Buffers layer_parameter_gradients2;
-	Buffers extra_data;
-	Buffers layer_parameter_updates;
-	Buffers layer_1st_moment_estimates;
-	Buffers layer_2nd_moment_estimates;
-	Buffers dummy;
-	Buffer objective;
-	Buffer target;
-	uint32_t channels = 128;
-	uint32_t batch_size = 1;
-	uint32_t height = 64;
-	uint32_t width = 64;
-	set_up_buffers( layer_inputs , layer_outputs , layer_input_gradients , layer_output_gradients , dummy , layer_parameter_gradients , layer_parameter_gradients2 , extra_data , layer_parameter_updates , layer_1st_moment_estimates , layer_2nd_moment_estimates , target , objective , channels , batch_size , height , width , true , true , true );
-	struct png_image_t input_image = read_png_file( std::string(argv[1]) );
-	struct png_image_t output_image;
-	//this means the output will not be exactly twice the input size. some pixels on the bottom & right will be cut off.
-	//it makes for an easier implementation (no overlapping patches, no non-32x32-pixel-patches).
-	output_image.width = 64 * ( input_image.width / 32 );
-	output_image.height = 64 * ( input_image.height / 32 );
-	output_image.color_type = input_image.color_type;
-	output_image.bit_depth = input_image.bit_depth;
-	output_image.row_pointers = static_cast<png_bytep*>(malloc(sizeof(png_bytep) * output_image.height));
-	for( row = 0 ; row < static_cast<uint32_t>(output_image.height) ; row++ ) {
-		//NB: this is a hack. you actually need png_get_rowbytes() to tell you how many bytes are in a row -_- . i'm gonna guess this. don't do this at home.
-		output_image.row_pointers[row] = static_cast<png_bytep>(malloc( 4 * sizeof(png_byte) * output_image.width ));
-	}
-	png_bytep rowp = NULL;
-	png_bytep px = NULL;
-	//this goes through the input image in 32x32-pixel-patches (64x64 on the output side). processing the entire input image at once
-	//is possible, but requires unreasonable amounts of RAM (approximately number of pixels times number of channels times number of layers time sizeof(float)).
-	for( row_offset = 0 ; row_offset < static_cast<uint32_t>(input_image.height/32) ; row_offset++ ) {
-		for( col_offset = 0 ; col_offset < static_cast<uint32_t>(input_image.width/32) ; col_offset++ ) {
-			//NB: if the down-/upsampling method is changed, the entire body of this loop needs to be replaced.
-			for( row = 0 ; row < 64 ; row++ ) {
-				rowp = input_image.row_pointers[(64*row_offset+row)/2]; //every 2nd input row will be the same
-				for( col = 0 ; col < 64 ; col++ ) {
-					px = &(rowp[((64*col_offset+col)/2) * 4]); //ditto for every 2nd input column
-					layer_inputs[0]->at( 0 * batch_size * 64 * 64 + row * 64 + col ) = px[0] / 255.0;
-					layer_inputs[0]->at( 1 * batch_size * 64 * 64 + row * 64 + col ) = px[1] / 255.0;
-					layer_inputs[0]->at( 2 * batch_size * 64 * 64 + row * 64 + col ) = px[2] / 255.0;
-				}
-			}
-			forward_and_backward( layer_inputs , layer_outputs , layer_input_gradients , layer_output_gradients , layer_parameters , layer_parameter_gradients , extra_data , target , objective , channels , batch_size , height , width , true , true );
-			for( row = 0 ; row < 64 ; row++ ) {
-				rowp = output_image.row_pointers[64*row_offset+row];
-				for( col = 0 ; col < 64 ; col++ ) {
-					px = &(rowp[(64*col_offset+col) * 4]);
-					//the target for the network during training was the residual, so now we have to add the output of the network to its
-					//input to get the final upsampled image.
-					px[0] = static_cast<png_byte>( round( 255.0 * ( clamp(	layer_inputs[0]->at( 0 * batch_size * 64 * 64 + row * 64 + col ) +
-												layer_outputs.back()->at( 0 * batch_size * 64 * 64 + row * 64 + col ) ) ) ) );
-					px[1] = static_cast<png_byte>( round( 255.0 * ( clamp(	layer_inputs[0]->at( 1 * batch_size * 64 * 64 + row * 64 + col ) +
-												layer_outputs.back()->at( 1 * batch_size * 64 * 64 + row * 64 + col ) ) ) ) );
-					px[2] = static_cast<png_byte>( round( 255.0 * ( clamp(	layer_inputs[0]->at( 2 * batch_size * 64 * 64 + row * 64 + col ) +
-												layer_outputs.back()->at( 2 * batch_size * 64 * 64 + row * 64 + col ) ) ) ) );
-				}
-			}
-			std::cerr << ".";
-		}
-	}
-	std::cerr << std::endl;
-	write_png_file( output_image , std::string(argv[1])+"_superresolved.png" );
-	return 0;
-}
+////apply (a.k.a. inference) neural network stored in extra_tiny_super_resolution_parameters.out to a single PNG image
+//int main( int argc, char** argv ) {
+//	if( 2 != argc ) {
+//		std::cerr << "gimme a PNG file please!" << std::endl;
+//		return 1;
+//	}
+//	Buffers layer_parameters;
+//	std::ifstream parameter_file = std::ifstream( "extra_tiny_super_resolution_parameters.out" , std::ifstream::in | std::ifstream::binary );
+//	if( parameter_file.bad() ) {
+//		throw std::length_error( std::string( CURRENT_FUNCTION_NAME ) + ": error while trying to open extra_tiny_super_resolution_parameters.out" );
+//	}
+//	uint32_t temp,row,col,row_offset,col_offset;
+//	try {
+//		parameter_file.read( (char*) &temp , sizeof(uint32_t) );
+//		layer_parameters.resize(temp);
+//		for( Buffer& buffer : layer_parameters ) {
+//			parameter_file.read( (char*) &temp , sizeof(uint32_t) );
+//			buffer = Buffer(new std::vector<float>(temp));
+//			if( 0 < buffer->size() ) {
+//				parameter_file.read( (char*) (buffer->data()) , sizeof(float) * buffer->size() );
+//			}
+//		}
+//	} catch(...) {
+//		std::cerr << "error while trying to read from extra_tiny_super_resolution_parameters.out because of: " << std::endl;
+//		throw;
+//	}
+//	Buffers layer_inputs;
+//	Buffers layer_outputs;
+//	Buffers layer_input_gradients;
+//	Buffers layer_output_gradients;
+//	Buffers layer_parameter_gradients;
+//	Buffers layer_parameter_gradients2;
+//	Buffers extra_data;
+//	Buffers layer_parameter_updates;
+//	Buffers layer_1st_moment_estimates;
+//	Buffers layer_2nd_moment_estimates;
+//	Buffers dummy;
+//	Buffer objective;
+//	Buffer target;
+//	uint32_t channels = 128;
+//	uint32_t batch_size = 1;
+//	uint32_t height = 64;
+//	uint32_t width = 64;
+//	set_up_buffers( layer_inputs , layer_outputs , layer_input_gradients , layer_output_gradients , dummy , layer_parameter_gradients , layer_parameter_gradients2 , extra_data , layer_parameter_updates , layer_1st_moment_estimates , layer_2nd_moment_estimates , target , objective , channels , batch_size , height , width , true , true , true );
+//	struct png_image_t input_image = read_png_file( std::string(argv[1]) );
+//	struct png_image_t output_image;
+//	//this means the output will not be exactly twice the input size. some pixels on the bottom & right will be cut off.
+//	//it makes for an easier implementation (no overlapping patches, no non-32x32-pixel-patches).
+//	output_image.width = 64 * ( input_image.width / 32 );
+//	output_image.height = 64 * ( input_image.height / 32 );
+//	output_image.color_type = input_image.color_type;
+//	output_image.bit_depth = input_image.bit_depth;
+//	output_image.row_pointers = static_cast<png_bytep*>(malloc(sizeof(png_bytep) * output_image.height));
+//	for( row = 0 ; row < static_cast<uint32_t>(output_image.height) ; row++ ) {
+//		//NB: this is a hack. you actually need png_get_rowbytes() to tell you how many bytes are in a row -_- . i'm gonna guess this. don't do this at home.
+//		output_image.row_pointers[row] = static_cast<png_bytep>(malloc( 4 * sizeof(png_byte) * output_image.width ));
+//	}
+//	png_bytep rowp = NULL;
+//	png_bytep px = NULL;
+//	//this goes through the input image in 32x32-pixel-patches (64x64 on the output side). processing the entire input image at once
+//	//is possible, but requires unreasonable amounts of RAM (approximately number of pixels times number of channels times number of layers time sizeof(float)).
+//	for( row_offset = 0 ; row_offset < static_cast<uint32_t>(input_image.height/32) ; row_offset++ ) {
+//		for( col_offset = 0 ; col_offset < static_cast<uint32_t>(input_image.width/32) ; col_offset++ ) {
+//			//NB: if the down-/upsampling method is changed, the entire body of this loop needs to be replaced.
+//			for( row = 0 ; row < 64 ; row++ ) {
+//				rowp = input_image.row_pointers[(64*row_offset+row)/2]; //every 2nd input row will be the same
+//				for( col = 0 ; col < 64 ; col++ ) {
+//					px = &(rowp[((64*col_offset+col)/2) * 4]); //ditto for every 2nd input column
+//					layer_inputs[0]->at( 0 * batch_size * 64 * 64 + row * 64 + col ) = px[0] / 255.0;
+//					layer_inputs[0]->at( 1 * batch_size * 64 * 64 + row * 64 + col ) = px[1] / 255.0;
+//					layer_inputs[0]->at( 2 * batch_size * 64 * 64 + row * 64 + col ) = px[2] / 255.0;
+//				}
+//			}
+//			forward_and_backward( layer_inputs , layer_outputs , layer_input_gradients , layer_output_gradients , layer_parameters , layer_parameter_gradients , extra_data , target , objective , channels , batch_size , height , width , true , true );
+//			for( row = 0 ; row < 64 ; row++ ) {
+//				rowp = output_image.row_pointers[64*row_offset+row];
+//				for( col = 0 ; col < 64 ; col++ ) {
+//					px = &(rowp[(64*col_offset+col) * 4]);
+//					//the target for the network during training was the residual, so now we have to add the output of the network to its
+//					//input to get the final upsampled image.
+//					px[0] = static_cast<png_byte>( round( 255.0 * ( clamp(	layer_inputs[0]->at( 0 * batch_size * 64 * 64 + row * 64 + col ) +
+//												layer_outputs.back()->at( 0 * batch_size * 64 * 64 + row * 64 + col ) ) ) ) );
+//					px[1] = static_cast<png_byte>( round( 255.0 * ( clamp(	layer_inputs[0]->at( 1 * batch_size * 64 * 64 + row * 64 + col ) +
+//												layer_outputs.back()->at( 1 * batch_size * 64 * 64 + row * 64 + col ) ) ) ) );
+//					px[2] = static_cast<png_byte>( round( 255.0 * ( clamp(	layer_inputs[0]->at( 2 * batch_size * 64 * 64 + row * 64 + col ) +
+//												layer_outputs.back()->at( 2 * batch_size * 64 * 64 + row * 64 + col ) ) ) ) );
+//				}
+//			}
+//			std::cerr << ".";
+//		}
+//	}
+//	std::cerr << std::endl;
+//	write_png_file( output_image , std::string(argv[1])+"_superresolved.png" );
+//	std::cerr << "result written to " << (std::string(argv[1])) << "_superresolved.png" << std::endl;
+//	return 0;
+//}
 
 // vim: ts=8 : autoindent : textwidth=0 : foldmethod=marker
