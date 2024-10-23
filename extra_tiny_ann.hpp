@@ -342,6 +342,26 @@ std::tuple<uint32_t,uint32_t,uint32_t,uint32_t> buffer_sizes_nonlin_leaky_relu( 
 	return (std::tuple<uint32_t,uint32_t,uint32_t,uint32_t>(input_channels*batch_size*height*width,input_channels*batch_size*height*width,0,0));
 }
 
+void forward_nonlin_relu( Buffer input , Buffer output , uint32_t input_channels , uint32_t output_channels , uint32_t batch_size , uint32_t height , uint32_t width ) {
+	uint32_t i,n;
+	n = input_channels*batch_size*height*width;
+	for( i = 0 ; i < n ; i++ ) {
+		(*output)[i]=(0<(*input)[i])?((*input)[i]):0.0;
+	}
+}
+
+void backward_nonlin_relu( const Buffer output , Buffer output_gradient , Buffer input_gradient , const Buffer parameters , uint32_t input_channels , uint32_t output_channels , uint32_t batch_size , uint32_t height , uint32_t width ) {
+	uint32_t i,n;
+	n = input_channels*batch_size*height*width;
+	for( i = 0 ; i < n ; i++ ) {
+		(*input_gradient)[i]=(0<(*output)[i])?((*output_gradient)[i]):0.0;
+	}
+}
+
+std::tuple<uint32_t,uint32_t,uint32_t,uint32_t> buffer_sizes_nonlin_relu( uint32_t input_channels , uint32_t output_channels , uint32_t batch_size , uint32_t height , uint32_t width ) {
+	return (std::tuple<uint32_t,uint32_t,uint32_t,uint32_t>(input_channels*batch_size*height*width,input_channels*batch_size*height*width,0,0));
+}
+
 void forward_nonlin_exp( Buffer input , Buffer output , uint32_t input_channels , uint32_t output_channels , uint32_t batch_size , uint32_t height , uint32_t width ) {
 	uint32_t i,n;
 	n = input_channels*batch_size*height*width;
@@ -359,7 +379,7 @@ void backward_nonlin_exp( const Buffer output , Buffer output_gradient , Buffer 
 }
 
 std::tuple<uint32_t,uint32_t,uint32_t,uint32_t> buffer_sizes_nonlin_exp( uint32_t input_channels , uint32_t output_channels , uint32_t batch_size , uint32_t height , uint32_t width ) {
-	return (buffer_sizes_nonlin_leaky_relu( input_channels , output_channels , batch_size , height , width ));
+	return (std::tuple<uint32_t,uint32_t,uint32_t,uint32_t>(input_channels*batch_size*height*width,input_channels*batch_size*height*width,0,0));
 }
 
 void forward_nonlin_poly_exp( Buffer input , Buffer output , uint32_t input_channels , uint32_t output_channels , uint32_t batch_size , uint32_t height , uint32_t width ) {
@@ -379,7 +399,27 @@ void backward_nonlin_poly_exp( Buffer output , Buffer output_gradient , Buffer i
 }
 
 std::tuple<uint32_t,uint32_t,uint32_t,uint32_t> buffer_sizes_nonlin_poly_exp( uint32_t input_channels , uint32_t output_channels , uint32_t batch_size , uint32_t height , uint32_t width ) {
-	return (buffer_sizes_nonlin_leaky_relu( input_channels , output_channels , batch_size , height , width ));
+	return (std::tuple<uint32_t,uint32_t,uint32_t,uint32_t>(input_channels*batch_size*height*width,input_channels*batch_size*height*width,0,0));
+}
+
+void forward_nonlin_sigmoid( Buffer input , Buffer output , uint32_t input_channels , uint32_t output_channels , uint32_t batch_size , uint32_t height , uint32_t width ) {
+	uint32_t i,n;
+	n = input_channels*batch_size*height*width;
+	for( i = 0 ; i < n ; i++ ) {
+		(*output)[i]=0.5+0.5*tanh((*input)[i]);
+	}
+}
+
+void backward_nonlin_sigmoid( Buffer output , Buffer output_gradient , Buffer input_gradient , const Buffer parameters , uint32_t input_channels , uint32_t output_channels , uint32_t batch_size , uint32_t height , uint32_t width ) {
+	uint32_t i,n;
+	n = input_channels*batch_size*height*width;
+	for( i = 0 ; i < n ; i++ ) {
+		(*input_gradient)[i]=2.0*(*output_gradient)[i]*(1.0-(*output_gradient)[i]*(*output_gradient)[i]);
+	}
+}
+
+std::tuple<uint32_t,uint32_t,uint32_t,uint32_t> buffer_sizes_nonlin_sigmoid( uint32_t input_channels , uint32_t output_channels , uint32_t batch_size , uint32_t height , uint32_t width ) {
+	return (std::tuple<uint32_t,uint32_t,uint32_t,uint32_t>(input_channels*batch_size*height*width,input_channels*batch_size*height*width,0,0));
 }
 
 void forward_bias( Buffer input , Buffer output , const Buffer parameters , uint32_t input_channels , uint32_t output_channels , uint32_t batch_size , uint32_t height , uint32_t width ) {
