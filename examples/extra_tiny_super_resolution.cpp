@@ -22,10 +22,14 @@ typedef std::shared_ptr<std::vector<struct png_image_t>> SR_Data_Buffer;
 SR_Data_Buffer load_super_resolution_data( const std::string& dirname ) { // {{{
 	int32_t i;
 	char old_dir[FILENAME_MAX];
-	getcwd(old_dir,sizeof(old_dir));
+	if( NULL == getcwd(old_dir,sizeof(old_dir)) ) {
+		throw std::length_error( std::string( CURRENT_FUNCTION_NAME ) + ": cannot get current directory" );
+	}
 	std::shared_ptr<std::vector<std::string>> entries = get_dir_entries( dirname );
 	SR_Data_Buffer result = SR_Data_Buffer(new std::vector<struct png_image_t>());
-	chdir(dirname.c_str());
+	if( 0 > chdir(dirname.c_str()) ) {
+		throw std::length_error( std::string( CURRENT_FUNCTION_NAME ) + ": cannot change to directory '" + dirname + "' because of '" + std::string(strerror(errno)) + "'" );
+	}
 	for( const std::string& filename : (*entries) ) {
 		try {
 			result->push_back(read_png_file(filename));
@@ -39,11 +43,15 @@ SR_Data_Buffer load_super_resolution_data( const std::string& dirname ) { // {{{
 			}
 		} catch(...) {
 			std::cerr << "error while trying to read '" << filename << "' because of: " << std::endl;
-			chdir(old_dir);
+			if( 0 > chdir(old_dir) ) {
+				;//one error is enough
+			}
 			throw;
 		}
 	}
-	chdir(old_dir);
+	if( 0 > chdir(old_dir) ) {
+		throw std::length_error( std::string( CURRENT_FUNCTION_NAME ) + ": cannot change to directory '" + std::string(old_dir) + "' because of '" + std::string(strerror(errno)) + "'" );
+	}
 	return result;
 } // }}}
 

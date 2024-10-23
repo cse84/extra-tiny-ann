@@ -119,10 +119,19 @@ void write_png_file( struct png_image_t image , std::string filename ) {
 	}
 	png_write_image( png , image.row_pointers );
 	png_write_end( png , NULL );
-	for(int y = 0; y < image.height; y++) {
-		free( image.row_pointers[y] );
-	}
-	free( image.row_pointers );
 	fclose(fp);
 	png_destroy_write_struct(&png, &info);
+}
+
+void free_png_image( struct png_image_t image ) {
+	for(int y = 0; y < image.height; y++) {
+		if( NULL != image.row_pointers[y] ) {
+			free(image.row_pointers[y]);
+		}
+		image.row_pointers[y] = NULL;
+	}
+	if( NULL != image.row_pointers ) {
+		free(image.row_pointers);
+	}
+	image.row_pointers = NULL;
 }
